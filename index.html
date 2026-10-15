@@ -15,14 +15,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <div class="app">
     <header class="top">
       <div class="brand">
         <div class="avatar">
-          <img src="kiko.jpg" alt="Kiko" width="64" height="64" />
+          <img src="kiko.svg" alt="Kiko" width="64" height="64" />
           <span class="avatar-badge" aria-hidden="true">🐾</span>
         </div>
         <div>
@@ -69,7 +69,7 @@
     <section class="history">
       <div class="history-head">
         <h2>Recent walks</h2>
-        <span class="history-hint">Tap ✕ to remove a mistake</span>
+        <span class="history-hint">Tap 🗑️ to remove a mistake</span>
       </div>
       <ul class="history-list" id="historyList">
         <li class="empty">Nothing here yet — go for a walk! 🐾</li>
@@ -82,6 +82,17 @@
     <button id="toastUndo" class="toast-undo" hidden>Undo</button>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <div class="sheet-backdrop" id="sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="sheet-emoji" id="sheetEmoji"></div>
+      <h3 id="sheetTitle">Delete this walk?</h3>
+      <p class="sheet-text" id="sheetText"></p>
+      <button type="button" class="sheet-btn danger" id="sheetDelete">Delete walk</button>
+      <button type="button" class="sheet-btn" id="sheetCancel">Cancel</button>
+    </div>
+  </div>
+
+  <script type="module" src="app.js?v=3"></script>
 </body>
 </html>

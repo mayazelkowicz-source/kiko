@@ -57,10 +57,12 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 }
 .avatar img {
   display: block;
-  width: 100%; height: 100%;
+  width: 58px; height: 58px;
+  max-width: 100%;
   object-fit: cover;
   border-radius: 50%;
   border: 2px solid var(--card);
+  background: var(--apricot-soft);
 }
 .avatar-badge {
   position: absolute; right: -4px; bottom: -2px;
@@ -251,21 +253,70 @@ h1 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.02em; }
 .h-time small { display: block; font-size: 11px; font-weight: 600; opacity: 0.8; }
 .h-del {
   flex: none;
-  min-width: 32px; height: 32px;
-  padding: 0 8px;
+  width: 38px; height: 38px;
   display: grid; place-items: center;
-  border-radius: var(--radius-pill);
-  background: transparent;
+  border-radius: 50%;
+  background: var(--cream-2);
   color: var(--mocha-soft);
-  font-size: 14px; font-weight: 900;
   transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
 }
-.h-del:active { transform: scale(0.92); }
-.h-del.confirm {
-  background: #E0705A; color: #fff;
-  font-size: 13px; padding: 0 12px;
+.h-del:hover { background: #F8DCD3; color: #C4553F; }
+.h-del:active { transform: scale(0.9); background: #F8DCD3; color: #C4553F; }
+
+/* Two emojis (pee + poop) need a smaller size to fit their box */
+.hero-emoji.duo { font-size: 24px; letter-spacing: -2px; }
+.h-emoji.duo { font-size: 14px; letter-spacing: -1px; }
+.hero-emoji, .h-emoji { white-space: nowrap; overflow: hidden; }
+
+/* Delete confirmation bottom sheet */
+.sheet-backdrop {
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(74, 52, 39, 0);
+  transition: background 0.25s ease;
 }
-.history-list li.removing { opacity: 0.4; transition: opacity 0.2s ease; }
+.sheet-backdrop[hidden] { display: none; }
+.sheet-backdrop.open { background: rgba(74, 52, 39, 0.35); }
+.sheet {
+  width: 100%; max-width: 480px;
+  padding: 10px 20px calc(20px + var(--safe-bottom));
+  background: var(--card);
+  border-radius: 32px 32px 0 0;
+  box-shadow: 0 -10px 40px rgba(74, 52, 39, 0.2);
+  text-align: center;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(.2, .9, .3, 1.1);
+}
+.sheet-backdrop.open .sheet { transform: none; }
+.sheet-handle {
+  width: 40px; height: 5px; margin: 0 auto 14px;
+  border-radius: 99px; background: var(--line);
+}
+.sheet-emoji {
+  width: 64px; height: 64px; margin: 0 auto 10px;
+  display: grid; place-items: center;
+  font-size: 28px; white-space: nowrap;
+  background: var(--apricot-soft); border-radius: 22px;
+}
+.sheet h3 { margin: 0 0 4px; font-size: 20px; font-weight: 900; }
+.sheet-text { margin: 0 0 18px; font-size: 14px; font-weight: 700; color: var(--mocha-soft); }
+.sheet-btn {
+  display: block; width: 100%;
+  min-height: 54px; margin-top: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--cream-2);
+  font-size: 16px; font-weight: 900;
+  transition: transform 0.12s ease;
+}
+.sheet-btn:active { transform: scale(0.97); }
+.sheet-btn.danger { background: #D9604A; color: #fff; box-shadow: 0 8px 20px rgba(217, 96, 74, 0.3); }
+
+@media (min-width: 520px) {
+  .sheet-backdrop { align-items: center; }
+  .sheet { border-radius: 32px; padding-bottom: 20px; margin: 16px; }
+  .sheet-handle { display: none; }
+}
+
 .history-list .empty {
   justify-content: center; color: var(--mocha-soft); font-weight: 600; padding: 24px 12px;
 }

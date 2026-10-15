@@ -48,6 +48,11 @@ const els = {
   toast: $("toast"),
   toastMsg: $("toastMsg"),
   toastUndo: $("toastUndo"),
+  sheet: $("sheet"),
+  sheetEmoji: $("sheetEmoji"),
+  sheetText: $("sheetText"),
+  sheetDelete: $("sheetDelete"),
+  sheetCancel: $("sheetCancel"),
 };
 
 // ---------- State ----------
@@ -57,10 +62,8 @@ const state = {
   walks: [],
   knownIds: new Set(),
   firstLoad: true,
-  pendingDeleteId: null,
 };
 let walksCol = null;
-let pendingDeleteTimer;
 if (!PEOPLE.includes(state.person)) state.person = null;
 
 // ---------- Helpers ----------
@@ -155,6 +158,7 @@ function renderHero() {
   const last = state.walks[0];
   if (!last) {
     els.heroEmoji.textContent = "🐾";
+    els.heroEmoji.classList.remove("duo");
     els.heroAgo.textContent = "No walks yet";
     els.heroDetail.textContent = "Be the first to take Kiko out!";
     els.heroTime.textContent = "";
@@ -163,11 +167,14 @@ function renderHero() {
   }
   const a = ACTIONS[last.action] || ACTIONS.walk;
   els.heroEmoji.textContent = a.emoji;
+  els.heroEmoji.classList.toggle("duo", last.action === "both");
   els.heroAgo.textContent = timeAgo(last.date);
   els.heroDetail.textContent = `${last.person} · ${a.text}`;
   els.heroTime.textContent = `${dayLabel(last.date)} at ${clock(last.date)}`;
   els.heroNudge.hidden = Date.now() - last.date.getTime() < NUDGE_AFTER_HOURS * 3600_000;
 }
+
+const TRASH_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>`;
 
 function renderHistory(newIds = new Set()) {
   if (!state.walks.length) {
@@ -183,49 +190,61 @@ function renderHistory(newIds = new Set()) {
         <div class="h-emoji"></div>
         <div class="h-body"><p class="h-who"></p><p class="h-what"></p></div>
         <div class="h-time"><span class="t"></span><small class="d"></small></div>
-        <button type="button" class="h-del"></button>`;
-      li.querySelector(".h-emoji").textContent = a.emoji;
+        <button type="button" class="h-del">${TRASH_ICON}</button>`;
+      const em = li.querySelector(".h-emoji");
+      em.textContent = a.emoji;
+      em.classList.toggle("duo", w.action === "both");
       li.querySelector(".h-who").textContent = w.person;
       li.querySelector(".h-what").textContent = a.text;
       li.querySelector(".t").textContent = clock(w.date);
       li.querySelector(".d").textContent = dayLabel(w.date);
 
       const del = li.querySelector(".h-del");
-      const confirming = state.pendingDeleteId === w.id;
-      del.classList.toggle("confirm", confirming);
-      del.textContent = confirming ? "Delete" : "✕";
-      del.setAttribute("aria-label", confirming ? "Confirm delete" : `Remove ${w.person}'s walk`);
-      del.addEventListener("click", () => onDeleteTap(w, li));
+      del.setAttribute("aria-label", `Delete ${w.person}'s walk`);
+      del.addEventListener("click", () => openDeleteSheet(w));
       return li;
     })
   );
 }
 
-// Two taps to delete: ✕ turns into "Delete", tap again to confirm.
-function onDeleteTap(walk, li) {
-  if (!walksCol) return;
-  clearTimeout(pendingDeleteTimer);
-  if (state.pendingDeleteId !== walk.id) {
-    state.pendingDeleteId = walk.id;
-    vibrate();
-    renderHistory();
-    pendingDeleteTimer = setTimeout(() => {
-      state.pendingDeleteId = null;
-      renderHistory();
-    }, 3000);
-    return;
-  }
-  state.pendingDeleteId = null;
-  li.classList.add("removing");
+// ---------- Delete confirmation sheet ----------
+let walkToDelete = null;
+
+function openDeleteSheet(walk) {
+  walkToDelete = walk;
+  const a = ACTIONS[walk.action] || ACTIONS.walk;
+  els.sheetEmoji.textContent = a.emoji;
+  els.sheetText.textContent =
+    `${walk.person} · ${a.text} · ${dayLabel(walk.date)} at ${clock(walk.date)}`;
+  els.sheet.hidden = false;
+  requestAnimationFrame(() => els.sheet.classList.add("open"));
+  vibrate();
+}
+
+function closeDeleteSheet() {
+  walkToDelete = null;
+  els.sheet.classList.remove("open");
+  setTimeout(() => { els.sheet.hidden = true; }, 250);
+}
+
+els.sheetCancel.addEventListener("click", closeDeleteSheet);
+els.sheet.addEventListener("click", (e) => {
+  if (e.target === els.sheet) closeDeleteSheet(); // tap outside
+});
+els.sheetDelete.addEventListener("click", () => {
+  const walk = walkToDelete;
+  closeDeleteSheet();
+  if (!walk || !walksCol) return;
   vibrate([10, 30, 10]);
   deleteDoc(doc(walksCol, walk.id))
-    .then(() => showToast(`Removed ${walk.person}'s walk`))
+    .then(() => showToast(`🗑️ Removed ${walk.person}'s walk`))
     .catch((err) => {
       console.error(err);
-      li.classList.remove("removing");
-      showToast("Couldn't delete — try again");
+      showToast(err.code === "permission-denied"
+        ? "No permission to delete — check Firestore rules"
+        : "Couldn't delete — try again");
     });
-}
+});
 
 // ---------- Toast ----------
 let toastTimer;
