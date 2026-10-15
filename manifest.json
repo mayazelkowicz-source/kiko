@@ -1,0 +1,11 @@
+{
+  "name": "Kiko's Walks",
+  "short_name": "Kiko",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FBF6EF",
+  "theme_color": "#FBF6EF",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

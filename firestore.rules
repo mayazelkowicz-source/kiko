@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /walks/{walkId} {
+      allow read: if true;
+      allow delete: if true;
+      allow create: if request.resource.data.keys().hasOnly(['person', 'action', 'timestamp'])
+                    && request.resource.data.person is string
+                    && request.resource.data.person.size() <= 20
+                    && request.resource.data.action in ['pee', 'poop', 'both', 'walk']
+                    && request.resource.data.timestamp == request.time;
+      allow update: if false;
+    }
+  }
+}

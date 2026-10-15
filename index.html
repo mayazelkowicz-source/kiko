@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#FBF6EF" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Kiko" />
+  <title>Kiko's Walks</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="avatar" aria-hidden="true">🐩</div>
+        <div>
+          <h1>Kiko's Walks</h1>
+          <p class="subtitle" id="status">Connecting…</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="setup-banner" id="setupBanner" hidden>
+      <strong>Almost there!</strong> Paste your Firebase config into <code>firebase-config.js</code>.
+    </div>
+
+    <!-- Hero: Last walk -->
+    <section class="card hero" id="hero" aria-live="polite">
+      <p class="eyebrow">Last walk</p>
+      <div class="hero-main">
+        <div class="hero-emoji" id="heroEmoji">🐾</div>
+        <div class="hero-text">
+          <p class="hero-ago" id="heroAgo">—</p>
+          <p class="hero-detail" id="heroDetail">No walks yet</p>
+        </div>
+      </div>
+      <p class="hero-time" id="heroTime"></p>
+    </section>
+
+    <!-- Quick entry -->
+    <section class="card entry">
+      <p class="eyebrow">Who's walking?</p>
+      <div class="chips" id="people" role="radiogroup" aria-label="Person"></div>
+
+      <p class="eyebrow">What did Kiko do?</p>
+      <div class="actions" id="actions" role="radiogroup" aria-label="Action"></div>
+
+      <button class="cta" id="submitBtn" disabled>
+        <span class="cta-label">Update Walk</span>
+      </button>
+    </section>
+
+    <!-- History -->
+    <section class="history">
+      <h2>Recent walks</h2>
+      <ul class="history-list" id="historyList">
+        <li class="empty">Nothing here yet — go for a walk! 🐾</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span id="toastMsg"></span>
+    <button id="toastUndo" class="toast-undo" hidden>Undo</button>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
