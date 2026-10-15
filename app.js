@@ -27,6 +27,7 @@ const ACTIONS = {
 };
 
 const HISTORY_SIZE = 10;
+const NUDGE_AFTER_HOURS = 5;
 const LAST_PERSON_KEY = "kiko:lastPerson";
 
 // ---------- DOM ----------
@@ -39,6 +40,7 @@ const els = {
   heroAgo: $("heroAgo"),
   heroDetail: $("heroDetail"),
   heroTime: $("heroTime"),
+  heroNudge: $("heroNudge"),
   people: $("people"),
   actions: $("actions"),
   submit: $("submitBtn"),
@@ -55,7 +57,10 @@ const state = {
   walks: [],
   knownIds: new Set(),
   firstLoad: true,
+  pendingDeleteId: null,
 };
+let walksCol = null;
+let pendingDeleteTimer;
 if (!PEOPLE.includes(state.person)) state.person = null;
 
 // ---------- Helpers ----------
@@ -106,8 +111,9 @@ function renderPeople() {
       b.setAttribute("aria-checked", String(state.person === name));
       b.textContent = name;
       b.addEventListener("click", () => {
-        state.person = name;
-        safeSet(LAST_PERSON_KEY, name);
+        // Tap the selected name again to clear it.
+        state.person = state.person === name ? null : name;
+        safeSet(LAST_PERSON_KEY, state.person || "");
         vibrate();
         renderPeople();
         updateSubmit();
@@ -130,7 +136,7 @@ function renderActions() {
       b.querySelector(".emoji").textContent = a.emoji;
       b.querySelector(".label").textContent = a.label;
       b.addEventListener("click", () => {
-        state.action = key;
+        state.action = state.action === key ? null : key;
         vibrate();
         renderActions();
         updateSubmit();
@@ -152,6 +158,7 @@ function renderHero() {
     els.heroAgo.textContent = "No walks yet";
     els.heroDetail.textContent = "Be the first to take Kiko out!";
     els.heroTime.textContent = "";
+    els.heroNudge.hidden = true;
     return;
   }
   const a = ACTIONS[last.action] || ACTIONS.walk;
@@ -159,6 +166,7 @@ function renderHero() {
   els.heroAgo.textContent = timeAgo(last.date);
   els.heroDetail.textContent = `${last.person} · ${a.text}`;
   els.heroTime.textContent = `${dayLabel(last.date)} at ${clock(last.date)}`;
+  els.heroNudge.hidden = Date.now() - last.date.getTime() < NUDGE_AFTER_HOURS * 3600_000;
 }
 
 function renderHistory(newIds = new Set()) {
@@ -174,15 +182,49 @@ function renderHistory(newIds = new Set()) {
       li.innerHTML = `
         <div class="h-emoji"></div>
         <div class="h-body"><p class="h-who"></p><p class="h-what"></p></div>
-        <div class="h-time"><span class="t"></span><small class="d"></small></div>`;
+        <div class="h-time"><span class="t"></span><small class="d"></small></div>
+        <button type="button" class="h-del"></button>`;
       li.querySelector(".h-emoji").textContent = a.emoji;
       li.querySelector(".h-who").textContent = w.person;
       li.querySelector(".h-what").textContent = a.text;
       li.querySelector(".t").textContent = clock(w.date);
       li.querySelector(".d").textContent = dayLabel(w.date);
+
+      const del = li.querySelector(".h-del");
+      const confirming = state.pendingDeleteId === w.id;
+      del.classList.toggle("confirm", confirming);
+      del.textContent = confirming ? "Delete" : "✕";
+      del.setAttribute("aria-label", confirming ? "Confirm delete" : `Remove ${w.person}'s walk`);
+      del.addEventListener("click", () => onDeleteTap(w, li));
       return li;
     })
   );
+}
+
+// Two taps to delete: ✕ turns into "Delete", tap again to confirm.
+function onDeleteTap(walk, li) {
+  if (!walksCol) return;
+  clearTimeout(pendingDeleteTimer);
+  if (state.pendingDeleteId !== walk.id) {
+    state.pendingDeleteId = walk.id;
+    vibrate();
+    renderHistory();
+    pendingDeleteTimer = setTimeout(() => {
+      state.pendingDeleteId = null;
+      renderHistory();
+    }, 3000);
+    return;
+  }
+  state.pendingDeleteId = null;
+  li.classList.add("removing");
+  vibrate([10, 30, 10]);
+  deleteDoc(doc(walksCol, walk.id))
+    .then(() => showToast(`Removed ${walk.person}'s walk`))
+    .catch((err) => {
+      console.error(err);
+      li.classList.remove("removing");
+      showToast("Couldn't delete — try again");
+    });
 }
 
 // ---------- Toast ----------
@@ -235,7 +277,7 @@ function startFirebase() {
     db = getFirestore(app);
   }
 
-  const walksCol = collection(db, "walks");
+  walksCol = collection(db, "walks");
   const q = query(walksCol, orderBy("timestamp", "desc"), limit(HISTORY_SIZE));
 
   onSnapshot(

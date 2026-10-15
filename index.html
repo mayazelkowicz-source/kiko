@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Kiko" />
   <title>Kiko's Walks</title>
-  <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="icon" href="icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,7 +21,10 @@
   <div class="app">
     <header class="top">
       <div class="brand">
-        <div class="avatar" aria-hidden="true">🐩</div>
+        <div class="avatar">
+          <img src="kiko.jpg" alt="Kiko" width="64" height="64" />
+          <span class="avatar-badge" aria-hidden="true">🐾</span>
+        </div>
         <div>
           <h1>Kiko's Walks</h1>
           <p class="subtitle" id="status">Connecting…</p>
@@ -43,7 +46,10 @@
           <p class="hero-detail" id="heroDetail">No walks yet</p>
         </div>
       </div>
-      <p class="hero-time" id="heroTime"></p>
+      <div class="hero-foot">
+        <p class="hero-time" id="heroTime"></p>
+        <span class="hero-nudge" id="heroNudge" hidden>Time for a walk?</span>
+      </div>
     </section>
 
     <!-- Quick entry -->
@@ -61,7 +67,10 @@
 
     <!-- History -->
     <section class="history">
-      <h2>Recent walks</h2>
+      <div class="history-head">
+        <h2>Recent walks</h2>
+        <span class="history-hint">Tap ✕ to remove a mistake</span>
+      </div>
       <ul class="history-list" id="historyList">
         <li class="empty">Nothing here yet — go for a walk! 🐾</li>
       </ul>
