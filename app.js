@@ -9,10 +9,12 @@ import {
   setDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   limit,
   onSnapshot,
   serverTimestamp,
+  getCountFromServer,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getMessaging,
@@ -51,6 +53,8 @@ const els = {
   heroDetail: $("heroDetail"),
   heroTime: $("heroTime"),
   heroNudge: $("heroNudge"),
+  champName: $("champName"),
+  champCount: $("champCount"),
   people: $("people"),
   actions: $("actions"),
   submit: $("submitBtn"),
@@ -72,6 +76,7 @@ const state = {
   walks: [],
   knownIds: new Set(),
   firstLoad: true,
+  champSig: null,
 };
 let walksCol = null;
 let devicesCol = null;
@@ -347,6 +352,13 @@ function startFirebase() {
       }
       state.firstLoad = false;
 
+      // Recount once the server has the change (new walk or a delete).
+      const sig = walks.map((w) => w.id).join();
+      if (!snap.metadata.hasPendingWrites && sig !== state.champSig) {
+        state.champSig = sig;
+        refreshChampion();
+      }
+
       const offline = snap.metadata.fromCache;
       els.status.textContent = offline ? "Offline · will sync" : "Live · synced with family";
       els.status.classList.toggle("live", !offline);
@@ -386,6 +398,29 @@ function startFirebase() {
     state.action = null;
     renderActions();
   });
+}
+
+// ---------- Champion ----------
+// One cheap count query per person, over all walks ever logged.
+async function refreshChampion() {
+  try {
+    const counts = await Promise.all(PEOPLE.map(async (name) => {
+      const snap = await getCountFromServer(query(walksCol, where("person", "==", name)));
+      return { name, count: snap.data().count };
+    }));
+    const top = Math.max(...counts.map((c) => c.count));
+    if (top === 0) {
+      els.champName.textContent = "No champion yet";
+      els.champCount.textContent = "Log a walk to take the crown!";
+      return;
+    }
+    const leaders = counts.filter((c) => c.count === top).map((c) => c.name);
+    els.champName.textContent = leaders.join(" & ");
+    els.champCount.textContent =
+      `${top} ${top === 1 ? "outing" : "outings"} with Kiko${leaders.length > 1 ? " · it's a tie!" : ""}`;
+  } catch (err) {
+    console.error(err); // counts need a connection; keep whatever is shown
+  }
 }
 
 // ---------- Notifications ----------
