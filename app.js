@@ -24,7 +24,7 @@ import {
 import { firebaseConfig, vapidKey } from "./firebase-config.js";
 
 // ---------- Config ----------
-const PEOPLE = ["Mom", "Dad", "Shir", "Maya", "Noa", "Adi", "Yuval"];
+const PEOPLE = ["Mom", "Dad", "Shir", "Maya", "Noa", "Adi", "Yuval", "Tomer", "Guy"];
 
 const ACTIONS = {
   pee:  { emoji: "💧",   label: "Pee",    text: "Peed" },
