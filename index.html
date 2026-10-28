@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
   <div class="app">
@@ -30,6 +30,9 @@
           <p class="subtitle" id="status">Connecting…</p>
         </div>
       </div>
+      <button type="button" class="bell" id="bellBtn" hidden>
+        <span id="bellIcon" aria-hidden="true">🔕</span><span id="bellLabel">Get alerts</span>
+      </button>
     </header>
 
     <div class="setup-banner" id="setupBanner" hidden>
@@ -93,6 +96,6 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=3"></script>
+  <script type="module" src="app.js?v=5"></script>
 </body>
 </html>

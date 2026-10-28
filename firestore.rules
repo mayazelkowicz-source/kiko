@@ -7,9 +7,21 @@ service cloud.firestore {
       allow create: if request.resource.data.keys().hasOnly(['person', 'action', 'timestamp'])
                     && request.resource.data.person is string
                     && request.resource.data.person.size() <= 20
-                    && request.resource.data.action in ['pee', 'poop', 'both', 'walk']
+                    && request.resource.data.action in ['pee', 'poop', 'both', 'walk', 'run']
                     && request.resource.data.timestamp == request.time;
       allow update: if false;
+    }
+    // Push tokens, one doc per phone. Only the Cloud Function reads them.
+    match /devices/{deviceId} {
+      allow read: if false;
+      allow delete: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['token', 'person', 'updatedAt'])
+                            && request.resource.data.token is string
+                            && request.resource.data.token.size() <= 4096
+                            && (request.resource.data.person == null
+                                || (request.resource.data.person is string
+                                    && request.resource.data.person.size() <= 20))
+                            && request.resource.data.updatedAt == request.time;
     }
   }
 }

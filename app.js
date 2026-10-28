@@ -14,26 +14,36 @@ import {
   onSnapshot,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import {
+  getMessaging,
+  getToken,
+  isSupported as messagingSupported,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+import { firebaseConfig, vapidKey } from "./firebase-config.js";
 
 // ---------- Config ----------
-const PEOPLE = ["Mom", "Dad", "Shir", "Maya", "Noa", "Adi"];
+const PEOPLE = ["Mom", "Dad", "Shir", "Maya", "Noa", "Adi", "Yuval"];
 
 const ACTIONS = {
   pee:  { emoji: "💧",   label: "Pee",    text: "Peed" },
   poop: { emoji: "💩",   label: "Poop",   text: "Pooped" },
   both: { emoji: "💧💩", label: "Both",   text: "Peed & pooped" },
   walk: { emoji: "🐾",   label: "Walked", text: "Just walked" },
+  run:  { emoji: "🏃",   label: "Run",    text: "Went for a run" },
 };
 
 const HISTORY_SIZE = 10;
 const NUDGE_AFTER_HOURS = 5;
 const LAST_PERSON_KEY = "kiko:lastPerson";
+const DEVICE_KEY = "kiko:device";
 
 // ---------- DOM ----------
 const $ = (id) => document.getElementById(id);
 const els = {
   status: $("status"),
+  bell: $("bellBtn"),
+  bellIcon: $("bellIcon"),
+  bellLabel: $("bellLabel"),
   setupBanner: $("setupBanner"),
   hero: $("hero"),
   heroEmoji: $("heroEmoji"),
@@ -64,6 +74,8 @@ const state = {
   firstLoad: true,
 };
 let walksCol = null;
+let devicesCol = null;
+let pushToken = null;
 if (!PEOPLE.includes(state.person)) state.person = null;
 
 // ---------- Helpers ----------
@@ -120,6 +132,7 @@ function renderPeople() {
         vibrate();
         renderPeople();
         updateSubmit();
+        saveDevice(); // so this phone doesn't get pinged for its own walks
       });
       return b;
     })
@@ -296,6 +309,8 @@ function startFirebase() {
     db = getFirestore(app);
   }
 
+  setupNotifications(app, db);
+
   walksCol = collection(db, "walks");
   const q = query(walksCol, orderBy("timestamp", "desc"), limit(HISTORY_SIZE));
 
@@ -371,6 +386,85 @@ function startFirebase() {
     state.action = null;
     renderActions();
   });
+}
+
+// ---------- Notifications ----------
+// Each phone that turns alerts on stores its push token in /devices/{id}.
+// A Cloud Function (functions/index.js) pings every device when a walk is logged,
+// skipping devices whose selected person is the one who logged it.
+function deviceId() {
+  let id = safeGet(DEVICE_KEY);
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now();
+    safeSet(DEVICE_KEY, id);
+  }
+  return id;
+}
+
+function saveDevice() {
+  if (!devicesCol || !pushToken) return Promise.resolve();
+  return setDoc(doc(devicesCol, deviceId()), {
+    token: pushToken,
+    person: state.person || null,
+    updatedAt: serverTimestamp(),
+  }).catch(console.error);
+}
+
+function renderBell(on) {
+  els.bell.hidden = false;
+  els.bell.classList.toggle("on", on);
+  els.bellIcon.textContent = on ? "🔔" : "🔕";
+  els.bellLabel.textContent = on ? "Alerts on" : "Get alerts";
+}
+
+async function setupNotifications(app, db) {
+  if (!vapidKey || vapidKey.startsWith("PASTE")) return; // not set up yet
+
+  const supported = "serviceWorker" in navigator && "Notification" in window
+    && (await messagingSupported().catch(() => false));
+  if (!supported) {
+    // iPhone only allows web notifications once the app is on the Home Screen.
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      renderBell(false);
+      els.bell.onclick = () =>
+        showToast("On iPhone: Share → Add to Home Screen, then open Kiko from there");
+    }
+    return;
+  }
+
+  const messaging = getMessaging(app);
+  devicesCol = collection(db, "devices");
+
+  async function subscribe() {
+    const registration = await navigator.serviceWorker.register("./sw.js");
+    pushToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+    await saveDevice();
+  }
+
+  const granted = Notification.permission === "granted";
+  renderBell(granted);
+  if (granted) subscribe().catch(console.error); // refresh token on every launch
+
+  els.bell.onclick = async () => {
+    vibrate();
+    if (Notification.permission === "granted" && pushToken) {
+      showToast("🔔 You'll get a ping whenever Kiko goes out");
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") {
+      showToast("Notifications are blocked — allow them in your phone settings");
+      return;
+    }
+    try {
+      await subscribe();
+      renderBell(true);
+      showToast("🔔 Alerts on! You'll know when Kiko goes out");
+    } catch (err) {
+      console.error(err);
+      showToast("Couldn't turn on alerts — try again");
+    }
+  };
 }
 
 function celebrate() {

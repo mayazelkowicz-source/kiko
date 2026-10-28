@@ -8,3 +8,7 @@ export const firebaseConfig = {
   messagingSenderId: "362511108054",
   appId: "1:362511108054:web:c43d24dc4993a97c7e4677"
 };
+
+// 🔔 For notifications: Firebase console → Project settings → Cloud Messaging →
+// Web Push certificates → Generate key pair, then paste the key here.
+export const vapidKey = "PASTE_YOUR_VAPID_KEY";
